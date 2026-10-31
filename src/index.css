@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 20% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 220 20% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 14%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 220 15% 16%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 45 100% 60%;
+    --accent-foreground: 220 25% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 16%;
+    --input: 220 15% 16%;
+    --ring: 271 91% 65%;
+
+    --radius: 0.75rem;
+
+    --chart-1: 271 91% 65%;
+    --chart-2: 45 100% 60%;
+    --chart-3: 173 80% 40%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(271 91% 65%), hsl(290 80% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(45 100% 60%), hsl(35 100% 55%));
+    --gradient-card: linear-gradient(145deg, hsl(220 20% 12%), hsl(220 20% 9%));
+    --shadow-glow: 0 0 40px -12px hsl(271 91% 65% / 0.3);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 10px 30px -10px hsl(271 91% 65% / 0.15), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background: linear-gradient(145deg, hsl(220 20% 12% / 0.8), hsl(220 20% 9% / 0.6));
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(220 15% 18% / 0.5);
+  }
+  .glow-primary {
+    box-shadow: 0 0 40px -12px hsl(271 91% 65% / 0.35);
+  }
+  .glow-accent {
+    box-shadow: 0 0 40px -12px hsl(45 100% 60% / 0.3);
+  }
+  .gradient-text-primary {
+    background: linear-gradient(135deg, hsl(271 91% 70%), hsl(290 80% 60%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-text-accent {
+    background: linear-gradient(135deg, hsl(45 100% 65%), hsl(35 100% 55%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-100vh) scale(1.5); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}

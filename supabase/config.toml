@@ -1,0 +1,52 @@
+project_id = "uhqdqwqdwrttnpfhviba"
+
+[auth]
+enabled = true
+site_url = "https://uhqdqwqdwrttnpfhviba.supabase.co"
+additional_redirect_urls = ["https://uhqdqwqdwrttnpfhviba.supabase.co"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+redirect_uri = "https://uhqdqwqdwrttnpfhviba.supabase.co/auth/v1/callback"
+[functions.generate-quiz]
+verify_jwt = false
+
+[functions.ai-helper]
+verify_jwt = false
+
+[functions.career-coach]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.pdf-converter]
+verify_jwt = false
+
+[functions.speech-to-text]
+verify_jwt = false
+
+[functions.text-to-speech]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.generate-flashcards]
+verify_jwt = false
+
+[functions.generate-story]
+verify_jwt = false
+
+[functions.generate-story-image]
+verify_jwt = false
+
+[functions.create-premium-checkout]
+verify_jwt = false
+
+[functions.check-premium]
+verify_jwt = false

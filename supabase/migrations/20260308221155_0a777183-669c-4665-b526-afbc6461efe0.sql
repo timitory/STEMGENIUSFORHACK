@@ -1,0 +1,2 @@
+CREATE POLICY "Public read access for story assets" ON storage.objects FOR SELECT USING (bucket_id = 'story-assets');
+CREATE POLICY "Service role can upload story assets" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'story-assets');
