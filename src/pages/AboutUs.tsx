@@ -692,6 +692,16 @@ export default function AboutUs() {
                 <li>
                   <span className="text-muted-foreground/60">Help & Feedback Available In-App</span>
                 </li>
+                <li>
+                  <Link to="/privacy" className="hover:text-primary transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="hover:text-primary transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -444,6 +444,16 @@ export default function Auth() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
+              <p className="text-[11px] text-center text-muted-foreground pt-1 leading-relaxed">
+                By creating an account, you agree to our{" "}
+                <Link to="/terms" className="text-primary hover:underline font-medium">
+                  Terms of Service
+                </Link>{" "}
+                and acknowledge our{" "}
+                <Link to="/privacy" className="text-primary hover:underline font-medium">
+                  Privacy Policy
+                </Link>.
+              </p>
             </form>
           </TabsContent>
         </Tabs>
