@@ -5,12 +5,14 @@ import { Header } from "@/components/dashboard/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   GraduationCap, BookOpen, Clock, Target, Bookmark, History, 
   Sparkles, CheckCircle2, ArrowRight, ShieldCheck, Filter, 
-  RotateCcw, Award, ChevronRight, Layers, Flame, FileText, Search
+  RotateCcw, Award, ChevronRight, Layers, Flame, FileText, Search,
+  Library, BookCheck, Upload, Check, ExternalLink, Star
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -24,6 +26,57 @@ import {
 } from "@/lib/pastQuestionsService";
 import { ExamType, Institution, ExamDepartment, PastQuestionSession, PastQuestionBookmark } from "@/types/pastQuestions";
 import SUBJECTED from "./Subjects";
+
+const CURATED_LIBRARY_STACKS = [
+  {
+    id: "jamb-10yr-stem",
+    title: "JAMB UTME 10-Year STEM Complete Bank",
+    examBody: "JAMB (UTME)",
+    badge: "Official CBT Archive",
+    description: "Complete 10-year question bank with verified step-by-step solutions for Mathematics, Physics, Chemistry, Biology, and Use of English.",
+    subjects: ["Mathematics", "Physics", "Chemistry", "Biology"],
+    yearSpan: "2015 - 2024",
+    totalQuestions: "4,000+ Questions",
+    mode: "timed_exam" as const,
+    color: "border-blue-500/40 bg-blue-500/5",
+  },
+  {
+    id: "waec-wassce-distinctions",
+    title: "WAEC / WASSCE Distinctions Series",
+    examBody: "WAEC (WASSCE)",
+    badge: "Marking Scheme Verified",
+    description: "Authentic objective and theory past examination papers with official WAEC step-by-step marking schemes and formula derivations.",
+    subjects: ["General Mathematics", "Physics", "Chemistry", "Further Maths"],
+    yearSpan: "2016 - 2024",
+    totalQuestions: "2,500+ Questions",
+    mode: "practice" as const,
+    color: "border-emerald-500/40 bg-emerald-500/5",
+  },
+  {
+    id: "neco-ssce-national",
+    title: "NECO SSCE National Examination Archive",
+    examBody: "NECO (SSCE)",
+    badge: "Verified Solutions",
+    description: "National Examinations Council Senior School Certificate papers formatted for self-paced revision and timed simulation.",
+    subjects: ["Mathematics", "Biology", "Chemistry", "Economics"],
+    yearSpan: "2017 - 2024",
+    totalQuestions: "1,800+ Questions",
+    mode: "practice" as const,
+    color: "border-purple-500/40 bg-purple-500/5",
+  },
+  {
+    id: "post-utme-top-unis",
+    title: "Premier Universities Post-UTME Vault",
+    examBody: "Post-UTME",
+    badge: "High-Yield Screening",
+    description: "Comprehensive screening questions for UNILAG, UI, OAU, UNIBEN, FUTO, and ABU to maximize admission aggregates.",
+    subjects: ["General Paper", "STEM Bundle", "Aptitude"],
+    yearSpan: "2018 - 2024",
+    totalQuestions: "1,200+ Questions",
+    mode: "timed_exam" as const,
+    color: "border-amber-500/40 bg-amber-500/5",
+  },
+];
 
 export default function PastQuestionsHub() {
   const navigate = useNavigate();
@@ -50,11 +103,13 @@ export default function PastQuestionsHub() {
   const [selectedMode, setSelectedMode] = useState<"practice" | "timed_exam" | "topic_drill">("practice");
   const [questionCount, setQuestionCount] = useState<string>("10");
 
-  // User History & Bookmarks
+  // User History & Bookmarks & Contributions
   const [history, setHistory] = useState<PastQuestionSession[]>([]);
   const [bookmarks, setBookmarks] = useState<PastQuestionBookmark[]>([]);
+  const [verifiedContributions, setVerifiedContributions] = useState<any[]>([]);
   const [matchingCount, setMatchingCount] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -92,6 +147,18 @@ export default function PastQuestionsHub() {
       // Populate default subjects from the rich Subjects taxonomy
       const subjectsList = SUBJECTED.map((s) => s.value).sort();
       setAvailableSubjects(subjectsList);
+
+      // Load verified community contributions for the online library
+      try {
+        const { data: contribData } = await (supabase as any)
+          .from("user_submitted_collections")
+          .select("id, title, institution_name, course_title, course_code, academic_session, compiler_name, status, created_at, has_answers, has_marking_scheme")
+          .order("created_at", { ascending: false })
+          .limit(20);
+        setVerifiedContributions(contribData || []);
+      } catch (err) {
+        console.warn("Could not load community contributions:", err);
+      }
     } catch (error) {
       console.error("Error loading Past Questions Hub:", error);
       toast.error("Failed to load past questions data");
@@ -235,35 +302,77 @@ export default function PastQuestionsHub() {
                   <span>Timed CBT Simulation</span>
                 </div>
               </div>
-              {/* University Library Shortcut CTA */}
-              <div className="mt-5">
-                <button
+              {/* University & Library Action CTAs */}
+              <div className="flex flex-wrap gap-3 mt-6">
+                <Button
                   onClick={() => navigate("/past-questions/university")}
-                  className="group w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50 transition-all duration-200 text-xs sm:text-sm font-semibold text-primary"
+                  className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 text-xs sm:text-sm font-semibold gap-2"
                 >
-                  <div className="flex items-center gap-2 truncate">
-                    <GraduationCap className="w-4 h-4 shrink-0" />
-                    <span className="truncate">Open Medical &amp; University Library</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                </button>
+                  <GraduationCap className="w-4 h-4 shrink-0" />
+                  <span>University &amp; Medical Library</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={() => navigate("/past-questions/submit")}
+                  variant="outline"
+                  className="border-primary/40 text-primary hover:bg-primary/10 text-xs sm:text-sm font-semibold gap-2"
+                >
+                  <Upload className="w-4 h-4 shrink-0 text-accent" />
+                  <span>Contribute Past Questions</span>
+                  <Badge className="bg-accent/20 text-accent border-0 text-[10px]">Verified Badge</Badge>
+                </Button>
+                <Button
+                  onClick={() => navigate("/past-questions/my-submissions")}
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground text-xs sm:text-sm gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>My Submissions &amp; Status</span>
+                </Button>
               </div>
             </div>
+          </div>
+
+          {/* Library Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search library catalog (e.g. WAEC Mathematics 2024, JAMB Physics, NECO Chemistry, MTH 101)..."
+              className="pl-11 h-12 bg-secondary/30 border-border/60 text-sm rounded-xl focus:border-primary/60"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           {/* Main Workspace Tabs */}
           <Tabs defaultValue="practice" className="space-y-6">
             <TabsList className="bg-secondary/60 p-1 border border-border/50 flex flex-wrap h-auto gap-1 w-full">
-              <TabsTrigger value="practice" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-1.5 text-xs sm:text-sm">
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
-                <span className="whitespace-nowrap">Find Questions</span>
+              <TabsTrigger value="practice" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-2 text-xs sm:text-sm">
+                <Target className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="whitespace-nowrap">Exam Sessions</span>
               </TabsTrigger>
-              <TabsTrigger value="bookmarks" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-1.5 text-xs sm:text-sm">
-                <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent shrink-0" />
+              <TabsTrigger value="stacks" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-2 text-xs sm:text-sm">
+                <Library className="w-3.5 h-3.5 text-accent shrink-0" />
+                <span className="whitespace-nowrap">Curated Library Stacks</span>
+              </TabsTrigger>
+              <TabsTrigger value="contributions" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-2 text-xs sm:text-sm">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="whitespace-nowrap">Library Contributions ({verifiedContributions.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="bookmarks" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-2 text-xs sm:text-sm">
+                <Bookmark className="w-3.5 h-3.5 text-accent shrink-0" />
                 <span className="whitespace-nowrap">Saved ({bookmarks.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="history" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-1.5 text-xs sm:text-sm">
-                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <TabsTrigger value="history" className="gap-1.5 flex-1 min-w-[120px] px-2.5 py-2 text-xs sm:text-sm">
+                <History className="w-3.5 h-3.5 shrink-0" />
                 <span className="whitespace-nowrap">History ({history.length})</span>
               </TabsTrigger>
             </TabsList>
@@ -574,7 +683,239 @@ export default function PastQuestionsHub() {
               </div>
             </TabsContent>
 
-            {/* TAB 2: BOOKMARKS */}
+            {/* TAB 2: CURATED LIBRARY STACKS */}
+            <TabsContent value="stacks" className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-4">
+                <div>
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Library className="w-5 h-5 text-accent" />
+                    Curated Examination Stacks &amp; Archives
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Pre-compiled, syllabus-aligned past question collections with verified solutions and marking schemes.
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-xs text-accent border-accent/40 w-fit">
+                  Verified Academic Stacks
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {CURATED_LIBRARY_STACKS.map((stack) => (
+                  <Card
+                    key={stack.id}
+                    className={`p-6 border glass-card space-y-4 hover:border-primary/50 transition-all ${stack.color}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="secondary" className="text-[10px] font-bold">
+                            {stack.examBody}
+                          </Badge>
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            {stack.badge}
+                          </Badge>
+                        </div>
+                        <h4 className="text-base font-bold text-foreground leading-snug">
+                          {stack.title}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {stack.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {stack.subjects.map((sub) => (
+                        <span
+                          key={sub}
+                          className="px-2 py-0.5 rounded-md bg-secondary/60 text-foreground text-[11px] border border-border/40"
+                        >
+                          {sub}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pt-3 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Years: <strong className="text-foreground">{stack.yearSpan}</strong></span>
+                      <span>{stack.totalQuestions}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        onClick={() => {
+                          const examObj = examTypes.find((e) => e.name.toLowerCase().includes(stack.examBody.toLowerCase().slice(0, 4)));
+                          const examId = examObj ? examObj.id : (examTypes[0]?.id || "");
+                          navigate(`/past-questions/practice?examTypeId=${examId}&mode=${stack.mode}&count=20`);
+                        }}
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold gap-1.5 h-9"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        Open in Enlarged Reading &amp; Practice Desk
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* TAB 3: COMMUNITY CONTRIBUTIONS & VERIFICATION DESK */}
+            <TabsContent value="contributions" className="space-y-6">
+              {/* Verification Standard Banner */}
+              <Card className="p-6 glass-card border-border/60 bg-gradient-to-r from-emerald-950/20 via-background to-secondary/30 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                      <h3 className="text-base font-bold text-foreground">
+                        STEM Genius Library Contribution &amp; Peer Verification
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
+                      Just as in university libraries, students, educators, and scholars can deposit past question papers, answer keys, and marking schemes. Every paper is reviewed for accuracy before publication.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    <Button
+                      onClick={() => navigate("/past-questions/submit")}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold gap-1.5 h-9 shadow-md"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      Contribute Past Question
+                    </Button>
+                    <Button
+                      onClick={() => navigate("/past-questions/my-submissions")}
+                      variant="outline"
+                      className="border-border/60 text-xs font-semibold h-9"
+                    >
+                      Track My Submissions
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 3-Step Verification Pipeline */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs border-t border-border/40">
+                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30 border border-border/30">
+                    <span className="w-5 h-5 rounded-full bg-primary/20 text-primary font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <div>
+                      <p className="font-semibold text-foreground">Authentic Paper Intake</p>
+                      <p className="text-[11px] text-muted-foreground">Original PDF paper uploaded with exam body or university attribution.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30 border border-border/30">
+                    <span className="w-5 h-5 rounded-full bg-accent/20 text-accent font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <div>
+                      <p className="font-semibold text-foreground">Academic Verification</p>
+                      <p className="text-[11px] text-muted-foreground">Marking schemes and solutions vetted by academic moderators.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5 p-2 rounded-lg bg-secondary/30 border border-border/30">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <div>
+                      <p className="font-semibold text-foreground">Published With Seal</p>
+                      <p className="text-[11px] text-muted-foreground">Paper enters the permanent digital stacks with Verified Library Badge.</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Verified Community Papers Feed */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <BookCheck className="w-4 h-4 text-primary" />
+                    Community Deposited &amp; Verified Papers
+                  </h4>
+                  <span className="text-xs text-muted-foreground">
+                    {verifiedContributions.length} collections deposited
+                  </span>
+                </div>
+
+                {verifiedContributions.length === 0 ? (
+                  <Card className="p-10 text-center glass-card border-border/60 space-y-3">
+                    <Library className="w-10 h-10 text-muted-foreground/40 mx-auto" />
+                    <h5 className="font-bold text-sm text-foreground">No Submissions Yet</h5>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      Be the first to deposit authentic past questions for WAEC, JAMB, NECO, or your University into the national library.
+                    </p>
+                    <Button
+                      onClick={() => navigate("/past-questions/submit")}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs mt-2"
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5" /> Submit First Paper
+                    </Button>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {verifiedContributions.map((item) => (
+                      <Card
+                        key={item.id}
+                        className="p-5 glass-card border-border/60 space-y-3 hover:border-primary/40 transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-semibold text-primary block">
+                              {item.institution_name}
+                            </span>
+                            <h5 className="font-bold text-sm text-foreground mt-0.5">
+                              {item.title}
+                            </h5>
+                          </div>
+                          <Badge
+                            className={`text-[10px] shrink-0 ${
+                              item.status === "approved" || item.status === "published"
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            }`}
+                          >
+                            {item.status === "approved" || item.status === "published"
+                              ? "Verified by Library"
+                              : "Under Review"}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>Subject: <strong className="text-foreground">{item.course_title}</strong></span>
+                          <span>•</span>
+                          <span>Year: <strong className="text-foreground">{item.academic_session}</strong></span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          <span>Compiler: <strong className="text-foreground">{item.compiler_name || "Community Scholar"}</strong></span>
+                          {item.has_answers && (
+                            <Badge variant="outline" className="text-[9px] text-primary border-primary/30">
+                              Solutions Included
+                            </Badge>
+                          )}
+                          {item.has_marking_scheme && (
+                            <Badge variant="outline" className="text-[9px] text-accent border-accent/30">
+                              Marking Scheme
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </span>
+                          <Button
+                            size="sm"
+                            onClick={() => navigate("/past-questions/university")}
+                            className="h-8 text-xs bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 gap-1"
+                          >
+                            Open in University Library
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
             <TabsContent value="bookmarks" className="space-y-4">
               {bookmarks.length === 0 ? (
                 <Card className="p-12 text-center glass-card border-border/60">

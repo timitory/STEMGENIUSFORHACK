@@ -27,6 +27,16 @@ export interface VirtualClass {
   presentation_slides_url: string | null;
   host_announcements: string | null;
   pre_join_question?: string | null;
+  // Zoom Integration Fields
+  zoom_meeting_id?: string | null;
+  zoom_numeric_id?: number | null;
+  zoom_uuid?: string | null;
+  zoom_join_url?: string | null;
+  zoom_start_url?: string | null;
+  zoom_passcode?: string | null;
+  zoom_host_id?: string | null;
+  zoom_recording_status?: 'not_started' | 'recording' | 'processing' | 'available' | 'failed' | null;
+  zoom_metadata?: Record<string, any> | null;
   created_at: string;
   updated_at: string;
   // Joins
@@ -62,6 +72,11 @@ export interface ClassRecording {
   file_size_bytes: number;
   status: 'pending' | 'processing' | 'ready' | 'failed';
   access_permission: 'public' | 'registered_attendees' | 'host_only';
+  zoom_recording_id?: string | null;
+  zoom_play_url?: string | null;
+  zoom_download_url?: string | null;
+  zoom_share_url?: string | null;
+  zoom_recording_files?: any[];
   view_count: number;
   created_at: string;
   ready_at: string | null;

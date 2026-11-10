@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { provisionZoomMeeting } from "@/lib/zoomMeetingService";
 import {
   VirtualClass,
   ClassRegistration,
@@ -180,6 +181,22 @@ export async function createVirtualClass(
     }
   } else {
     newClass = inserted;
+  }
+
+  if (newClass?.id) {
+    try {
+      await provisionZoomMeeting({
+        classId: newClass.id,
+        title: data.title,
+        description: data.description,
+        scheduledStart: data.scheduledStart,
+        durationMinutes: data.durationMinutes,
+        meetingFormat: data.meetingFormat,
+        passcode: data.passcode,
+      });
+    } catch (zoomErr) {
+      console.warn('Could not immediately provision Zoom meeting:', zoomErr);
+    }
   }
 
   return newClass as unknown as VirtualClass;

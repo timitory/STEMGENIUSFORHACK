@@ -56,6 +56,7 @@ import ClassSummaryView from "./pages/ClassSummaryView";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import AIChat from "./pages/AIChat";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,8 @@ const App = () => (
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/tos" element={<TermsOfService />} />
           <Route path="/dashboard" element={<Index />} />
+          <Route path="/ai-chat" element={<AIChat />} />
+          <Route path="/ai-chat/:conversationId" element={<AIChat />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/callback" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />

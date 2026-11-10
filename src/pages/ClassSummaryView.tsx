@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   PlayCircle, Calendar, Clock, Users, ArrowLeft, Download,
-  Share2, CheckCircle2, HelpCircle, FileText, Sparkles, Loader2, ThumbsUp
+  Share2, CheckCircle2, HelpCircle, ExternalLink, FileText, Sparkles, Loader2, ThumbsUp
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchClassByRoomId, fetchClassQA } from "@/lib/virtualClassService";
@@ -199,6 +199,19 @@ export default function ClassSummaryView() {
             </div>
 
             <div className="flex items-center gap-3">
+              {recording?.zoom_share_url && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  asChild
+                  className="text-xs h-9 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                >
+                  <a href={recording.zoom_share_url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4" />
+                    Zoom Cloud
+                  </a>
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"

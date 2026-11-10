@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   GraduationCap, Bell, Sparkles, ShoppingCart, Crown, User, ShieldCheck, 
-  Search, Menu, X, Gamepad2, BookOpen, Users, Video, Calendar 
+  Search, Menu, X, Gamepad2, BookOpen, Users, Video, Calendar, Brain 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +92,17 @@ export function Header({ userName, isPremium, onSignOut }: HeaderProps) {
             <Video className="w-3.5 h-3.5 text-destructive" />
             <span className="hidden xl:inline">Live Classes</span>
           </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-foreground hover:text-primary hover:bg-primary/10 h-8 px-2.5 text-xs font-semibold"
+            onClick={() => navigate("/ai-chat")}
+            title="STEM Genius AI Conversational Chat"
+          >
+            <Brain className="w-3.5 h-3.5 text-primary" />
+            <span className="hidden xl:inline">AI Chat</span>
+          </Button>
           {/* <Button
             variant="ghost"
             size="sm"
@@ -111,7 +122,7 @@ export function Header({ userName, isPremium, onSignOut }: HeaderProps) {
             </Badge>
           )}
 
-          <Button 
+          <Button disabled
             variant="ghost" 
             size="icon"
             className="h-8 w-8 text-muted-foreground hover:text-foreground hidden sm:inline-flex"
@@ -210,6 +221,9 @@ export function Header({ userName, isPremium, onSignOut }: HeaderProps) {
                 </Button>
                 <Button variant="ghost" className="justify-start text-xs" onClick={() => { navigate('/virtual-classes'); setMobileOpen(false); }}>
                   <Video className="w-4 h-4 mr-2 text-destructive" /> Live Classes
+                </Button>
+                <Button variant="ghost" className="justify-start text-xs" onClick={() => { navigate('/ai-chat'); setMobileOpen(false); }}>
+                  <Brain className="w-4 h-4 mr-2 text-primary" /> AI Chat
                 </Button>
                 <Button variant="ghost" className="justify-start text-xs" onClick={() => { navigate('/my-profile'); setMobileOpen(false); }}>
                   <User className="w-4 h-4 mr-2" /> My Profile

@@ -616,7 +616,7 @@ export default function VirtualClassesHub() {
               Schedule Live Virtual Class / Webinar
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Broadcast high-definition video, slides, and interactive Q&A to up to 2,500 students simultaneously.
+              Broadcast Zoom-powered high-definition video, slides, and interactive Q&A to students with automated cloud recording.
             </DialogDescription>
           </DialogHeader>
 

@@ -38,6 +38,13 @@ export default function SubmitPastQuestions() {
   const [submitted, setSubmitted] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
 
+  // Category: National Standard Exams (WAEC, JAMB, NECO) vs University / Higher Education
+  const [submissionCategory, setSubmissionCategory] = useState<"national" | "university">("national");
+  const [nationalExamBody, setNationalExamBody] = useState("WAEC (WASSCE)");
+  const [nationalSubject, setNationalSubject] = useState("Mathematics");
+  const [nationalPaperType, setNationalPaperType] = useState("Paper 1 (Objective / CBT)");
+  const [nationalYear, setNationalYear] = useState("2024");
+
   // Form state
   const [institutionName, setInstitutionName] = useState("");
   const [faculty, setFaculty] = useState("");
@@ -204,12 +211,17 @@ Include:
     e.preventDefault();
     if (!user) return;
 
+    const effectiveInst = submissionCategory === "national" ? nationalExamBody : institutionName.trim();
+    const effectiveSession = submissionCategory === "national" ? nationalYear : academicSession.trim();
+    const effectiveCourseTitle = submissionCategory === "national" ? nationalSubject : courseTitle.trim();
+    const effectiveCourseCode = submissionCategory === "national" ? nationalPaperType : (courseCode.trim() || null);
+    const effectiveCollectionTitle = collectionTitle.trim() || `${effectiveInst} ${effectiveCourseTitle} (${effectiveSession})`;
+
     // Validation
-    if (!institutionName.trim()) { toast.error("Institution name is required"); return; }
-    if (!academicSession.trim()) { toast.error("Academic session / year is required"); return; }
-    if (!courseTitle.trim()) { toast.error("Course title is required"); return; }
-    if (!collectionTitle.trim()) { toast.error("Collection title is required"); return; }
-    if (!compilerName.trim()) { toast.error("Compiler / attribution is required"); return; }
+    if (!effectiveInst) { toast.error("Exam body or institution name is required"); return; }
+    if (!effectiveSession) { toast.error("Examination year or session is required"); return; }
+    if (!effectiveCourseTitle) { toast.error("Subject or course title is required"); return; }
+    if (!compilerName.trim()) { toast.error("Compiler / attribution name is required"); return; }
     if (!questionFile) { toast.error("Please attach the Question Document (PDF)"); return; }
 
     setSubmitting(true);
@@ -241,18 +253,18 @@ Include:
       setUploadProgress("Finalising submission...");
       const { error: insertError } = await (supabase as any).from("user_submitted_collections").insert({
         submitted_by: user.id,
-        institution_name: institutionName.trim(),
-        faculty: faculty.trim() || null,
-        programme: programme.trim() || null,
-        academic_level: academicLevel || null,
-        exam_period: examPeriod || null,
-        academic_session: academicSession.trim(),
-        course_code: courseCode.trim() || null,
-        course_title: courseTitle.trim(),
-        question_formats: questionFormats.length > 0 ? questionFormats : null,
-        title: collectionTitle.trim(),
+        institution_name: effectiveInst,
+        faculty: submissionCategory === "national" ? "National Examination" : (faculty.trim() || null),
+        programme: submissionCategory === "national" ? nationalExamBody : (programme.trim() || null),
+        academic_level: submissionCategory === "national" ? "Secondary / Pre-Degree" : (academicLevel || null),
+        exam_period: submissionCategory === "national" ? nationalPaperType : (examPeriod || null),
+        academic_session: effectiveSession,
+        course_code: effectiveCourseCode,
+        course_title: effectiveCourseTitle,
+        question_formats: questionFormats.length > 0 ? questionFormats : [submissionCategory === "national" ? "MCQ & Theory" : "MCQ"],
+        title: effectiveCollectionTitle,
         compiler_name: compilerName.trim(),
-        description: description.trim() || null,
+        description: description.trim() || (submissionCategory === "national" ? `Official ${effectiveInst} past questions for ${effectiveCourseTitle}.` : null),
         has_answers: hasAnswers || !!answersDocPath || !!aiAnswers,
         has_marking_scheme: hasMarkingScheme || !!markingSchemeDocPath || !!aiScheme,
         document_url: questionDocPath,
@@ -367,111 +379,237 @@ Include:
         ) : (
           /* Submission Form */
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Section: Institution */}
+            {/* Category Selector: National Exams vs University */}
+            <Card className="p-6 glass-card border-border/60 space-y-3">
+              <h3 className="font-bold text-sm text-foreground">
+                1. Select Examination Tier
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSubmissionCategory("national")}
+                  className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                    submissionCategory === "national"
+                      ? "bg-primary/10 border-primary ring-1 ring-primary/40 shadow-glow"
+                      : "bg-secondary/30 border-border/50 hover:border-border"
+                  }`}
+                >
+                  <BookOpen className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">National Examinations</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      WAEC (WASSCE), JAMB (UTME), NECO (SSCE), GCE & Post-UTME past question papers.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSubmissionCategory("university")}
+                  className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                    submissionCategory === "university"
+                      ? "bg-primary/10 border-primary ring-1 ring-primary/40 shadow-glow"
+                      : "bg-secondary/30 border-border/50 hover:border-border"
+                  }`}
+                >
+                  <FileText className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">University & Higher Education</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Degree, Medical, Engineering, and Polytechnic semester & block examinations.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </Card>
+
+            {/* Section: Exam / Institution Details */}
             <Card className="p-6 glass-card border-border/60 space-y-4">
               <h3 className="font-bold text-sm text-foreground border-b border-border/40 pb-2">
-                Institution & Programme Details
+                2. {submissionCategory === "national" ? "Examination & Subject Details" : "Institution & Programme Details"}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Institution / University Name <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g. University of Lagos, LASUCOM, OAU, Ahmadu Bello University"
-                    value={institutionName}
-                    onChange={e => setInstitutionName(e.target.value)}
-                    className="bg-secondary/40 text-xs"
-                    required
-                  />
+
+              {submissionCategory === "national" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Examination Body <span className="text-red-500">*</span>
+                    </label>
+                    <Select value={nationalExamBody} onValueChange={setNationalExamBody}>
+                      <SelectTrigger className="bg-secondary/40 text-xs">
+                        <SelectValue placeholder="Select Exam Body" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="WAEC (WASSCE)">WAEC / WASSCE (West African Senior School Cert)</SelectItem>
+                        <SelectItem value="JAMB (UTME)">JAMB / UTME (Unified Tertiary Matriculation)</SelectItem>
+                        <SelectItem value="NECO (SSCE)">NECO (National Examinations Council)</SelectItem>
+                        <SelectItem value="Post-UTME Screening">Post-UTME Screening (Top Universities)</SelectItem>
+                        <SelectItem value="GCE / Private">GCE / Private Candidate Examination</SelectItem>
+                        <SelectItem value="NABTEB">NABTEB (National Business & Technical)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Subject <span className="text-red-500">*</span>
+                    </label>
+                    <Select value={nationalSubject} onValueChange={setNationalSubject}>
+                      <SelectTrigger className="bg-secondary/40 text-xs">
+                        <SelectValue placeholder="Select Subject" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="Mathematics">Mathematics / General Maths</SelectItem>
+                        <SelectItem value="English Language">English Language & Comprehension</SelectItem>
+                        <SelectItem value="Physics">Physics</SelectItem>
+                        <SelectItem value="Chemistry">Chemistry</SelectItem>
+                        <SelectItem value="Biology">Biology</SelectItem>
+                        <SelectItem value="Further Mathematics">Further Mathematics</SelectItem>
+                        <SelectItem value="Agricultural Science">Agricultural Science</SelectItem>
+                        <SelectItem value="Economics">Economics</SelectItem>
+                        <SelectItem value="Government">Government</SelectItem>
+                        <SelectItem value="Civic Education">Civic Education</SelectItem>
+                        <SelectItem value="Computer Studies">Computer Studies / Data Processing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Examination Year <span className="text-red-500">*</span>
+                    </label>
+                    <Select value={nationalYear} onValueChange={setNationalYear}>
+                      <SelectTrigger className="bg-secondary/40 text-xs">
+                        <SelectValue placeholder="Select Year" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {["2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014"].map(yr => (
+                          <SelectItem key={yr} value={yr}>{yr} Past Questions</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Paper Format / Component
+                    </label>
+                    <Select value={nationalPaperType} onValueChange={setNationalPaperType}>
+                      <SelectTrigger className="bg-secondary/40 text-xs">
+                        <SelectValue placeholder="Select Paper" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Paper 1 (Objective / CBT)">Paper 1 (Objectives / CBT Multiple Choice)</SelectItem>
+                        <SelectItem value="Paper 2 (Theory / Essay)">Paper 2 (Essay & Written Working)</SelectItem>
+                        <SelectItem value="Paper 3 (Practical)">Paper 3 (Practical / Alternative to Practical)</SelectItem>
+                        <SelectItem value="Complete Pack (Papers 1 & 2)">Complete Combined Pack</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Faculty / College / School
-                  </label>
-                  <Input
-                    placeholder="e.g. College of Medicine, Faculty of Science"
-                    value={faculty}
-                    onChange={e => setFaculty(e.target.value)}
-                    className="bg-secondary/40 text-xs"
-                  />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Institution / University Name <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="e.g. University of Lagos, LASUCOM, OAU, Ahmadu Bello University"
+                      value={institutionName}
+                      onChange={e => setInstitutionName(e.target.value)}
+                      className="bg-secondary/40 text-xs"
+                      required={submissionCategory === "university"}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Faculty / College / School
+                    </label>
+                    <Input
+                      placeholder="e.g. College of Medicine, Faculty of Science"
+                      value={faculty}
+                      onChange={e => setFaculty(e.target.value)}
+                      className="bg-secondary/40 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Department / Programme
+                    </label>
+                    <Input
+                      placeholder="e.g. Medicine & Surgery (MBBS), BDS, Computer Science"
+                      value={programme}
+                      onChange={e => setProgramme(e.target.value)}
+                      className="bg-secondary/40 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Academic Level
+                    </label>
+                    <Select value={academicLevel} onValueChange={setAcademicLevel}>
+                      <SelectTrigger className="bg-secondary/40 text-xs">
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACADEMIC_LEVELS.map(l => (
+                          <SelectItem key={l} value={l}>{l}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Examination Period / Block / Semester
+                    </label>
+                    <Select value={examPeriod} onValueChange={setExamPeriod}>
+                      <SelectTrigger className="bg-secondary/40 text-xs">
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXAM_PERIODS.map(p => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Academic Session / Year <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="e.g. 2023/2024 or 2024"
+                      value={academicSession}
+                      onChange={e => setAcademicSession(e.target.value)}
+                      className="bg-secondary/40 text-xs"
+                      required={submissionCategory === "university"}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Course Code
+                    </label>
+                    <Input
+                      placeholder="e.g. ANA 201, PHY 301, BCH 202"
+                      value={courseCode}
+                      onChange={e => setCourseCode(e.target.value)}
+                      className="bg-secondary/40 text-xs"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
+                      Course Title <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      placeholder="e.g. Gross Anatomy & Histology, Systemic Pathology, Biochemistry"
+                      value={courseTitle}
+                      onChange={e => setCourseTitle(e.target.value)}
+                      className="bg-secondary/40 text-xs"
+                      required={submissionCategory === "university"}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Department / Programme
-                  </label>
-                  <Input
-                    placeholder="e.g. Medicine & Surgery (MBBS), BDS, Computer Science"
-                    value={programme}
-                    onChange={e => setProgramme(e.target.value)}
-                    className="bg-secondary/40 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Academic Level
-                  </label>
-                  <Select value={academicLevel} onValueChange={setAcademicLevel}>
-                    <SelectTrigger className="bg-secondary/40 text-xs">
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ACADEMIC_LEVELS.map(l => (
-                        <SelectItem key={l} value={l}>{l}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Examination Period / Block / Semester
-                  </label>
-                  <Select value={examPeriod} onValueChange={setExamPeriod}>
-                    <SelectTrigger className="bg-secondary/40 text-xs">
-                      <SelectValue placeholder="Select period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EXAM_PERIODS.map(p => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Academic Session / Year <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g. 2023/2024 or 2024"
-                    value={academicSession}
-                    onChange={e => setAcademicSession(e.target.value)}
-                    className="bg-secondary/40 text-xs"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Course Code
-                  </label>
-                  <Input
-                    placeholder="e.g. ANA 201, PHY 301, BCH 202"
-                    value={courseCode}
-                    onChange={e => setCourseCode(e.target.value)}
-                    className="bg-secondary/40 text-xs"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
-                    Course Title <span className="text-red-500">*</span>
-                  </label>
-                  <Input
-                    placeholder="e.g. Gross Anatomy & Histology, Systemic Pathology, Biochemistry"
-                    value={courseTitle}
-                    onChange={e => setCourseTitle(e.target.value)}
-                    className="bg-secondary/40 text-xs"
-                    required
-                  />
-                </div>
+              )}
                 <div className="sm:col-span-2">
                   <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
                     Question Formats Included
@@ -493,7 +631,6 @@ Include:
                     ))}
                   </div>
                 </div>
-              </div>
             </Card>
 
             {/* Section: Collection Info */}

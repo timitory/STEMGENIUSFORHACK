@@ -12,7 +12,7 @@ import { PremiumBanner } from "@/components/dashboard/PremiumBanner";
 import { AIDialog } from "@/components/dashboard/AIDialog";
 import { 
   Calculator, Beaker, Cpu, Brain, Mic, Lightbulb, BookOpen, Video, FileText, Atom, GraduationCap, PlayCircle, Briefcase,
-  Rocket, Flame, Target, Zap, Trophy, Plus, Users, Radio
+  Rocket, Flame, Target, Zap, Trophy, Plus, Users, Radio, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -140,7 +140,8 @@ export default function Index() {
   const features = [
     { title: "Past Questions Hub", description: "JAMB, WAEC, NECO & University CBT exam preparation", icon: <GraduationCap className="w-5 h-5" />, badge: "Exams", path: "/past-questions", color: "from-primary/25 to-accent/10" },
     { title: "Tutor Marketplace", description: "Book 1-on-1 and group lessons with verified Nigerian educators", icon: <Users className="w-5 h-5" />, badge: "Live Tutors", path: "/tutors", color: "from-accent/25 to-primary/10" },
-    { title: "Live Virtual Classes", description: "Interactive 1,000+ seat webinars, live Q&A & recorded masterclasses", icon: <Radio className="w-5 h-5" />, badge: "Webinars", path: "/virtual-classes", color: "from-destructive/25 to-primary/10" },
+    { title: "Live Virtual Classes", description: "Zoom-powered interactive webinars, live Q&A & recorded masterclasses", icon: <Radio className="w-5 h-5" />, badge: "Zoom Powered", path: "/virtual-classes", color: "from-destructive/25 to-primary/10" },
+    { title: "STEM Genius AI Chat", description: "Persistent conversational tutor powered by Google Gemini AI", icon: <Brain className="w-5 h-5" />, badge: "Gemini AI", path: "/ai-chat", color: "from-primary/30 to-accent/15" },
     { title: "AI Homework Helper", description: "Snap photos and get step-by-step solutions in any language", icon: <Brain className="w-5 h-5" />, badge: "AI Powered", path: "/ai-homework-helper", color: "from-primary/20 to-primary/5" },
     { title: "Voice STEM Tutor", description: "Ask questions and get voice explanations", icon: <Mic className="w-5 h-5" />, badge: "Voice AI", path: "/voice-stem-tutor", color: "from-chart-3/20 to-chart-3/5" },
     { title: "Challenge Arena", description: "Compete in quizzes and earn rewards", icon: <Lightbulb className="w-5 h-5" />, badge: "Win Prizes", path: "/stem-challenge-arena", color: "from-accent/20 to-accent/5" },
@@ -157,7 +158,8 @@ export default function Index() {
     { label: "Past Questions", icon: <GraduationCap className="w-4 h-4" />, path: "/past-questions", accent: true },
     { label: "Find Tutor", icon: <Users className="w-4 h-4" />, path: "/tutors", accent: false },
     { label: "Live Classes", icon: <Radio className="w-4 h-4" />, path: "/virtual-classes", accent: false },
-    { label: "Ask AI", icon: <Brain className="w-4 h-4" />, action: () => openAIDialog("tutor", "AI Tutor"), accent: false },
+    { label: "AI Chat", icon: <Brain className="w-4 h-4" />, path: "/ai-chat", accent: false },
+    { label: "Quick Solver", icon: <Sparkles className="w-4 h-4" />, action: () => openAIDialog("homework", "Quick Problem Solver"), accent: false },
   ];
 
   return (

@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MathRenderer } from "@/components/MathRenderer";
 import { 
   ArrowLeft, Clock, Bookmark, ChevronLeft, ChevronRight, CheckCircle2, 
-  XCircle, AlertCircle, HelpCircle, Send, RotateCcw, Flag, Sparkles, Loader2, FileText
+  XCircle, AlertCircle, HelpCircle, Send, RotateCcw, Flag, Sparkles, Loader2, FileText,
+  Maximize2, Minimize2, ZoomIn, ZoomOut, Type, BookOpen, Eye, LayoutGrid
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -66,6 +67,29 @@ export default function PastQuestionPlayer() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Enlarged Reading Screen & Reader Customization States
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [fontSize, setFontSize] = useState<"normal" | "large" | "xlarge">("normal");
+  const [readingTheme, setReadingTheme] = useState<"dark" | "sepia" | "contrast">("dark");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFloatingPalette, setShowFloatingPalette] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  const cycleFontSize = () => {
+    if (fontSize === "normal") setFontSize("large");
+    else if (fontSize === "large") setFontSize("xlarge");
+    else setFontSize("normal");
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: authSession } }) => {
@@ -304,7 +328,9 @@ export default function PastQuestionPlayer() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-md">
+      <header className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
+        readingTheme === "sepia" ? "bg-[#1c1815]/95 border-[#3d3228]" : "bg-background/90 border-border/60"
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -328,8 +354,8 @@ export default function PastQuestionPlayer() {
             </div>
           </div>
 
-          {/* Center Timer */}
-          <div className="flex items-center gap-3">
+          {/* Center: Timer & Reading Controls */}
+          <div className="flex items-center gap-2 sm:gap-4">
             {mode === "timed_exam" ? (
               <div
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-xs font-bold border transition-colors ${
@@ -342,15 +368,78 @@ export default function PastQuestionPlayer() {
                 <span>{formatTime(timeRemaining)}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
                 <Clock className="w-3.5 h-3.5" />
                 <span>Elapsed: {formatTime(timeSpent)}</span>
               </div>
             )}
+
+            {/* Reading Screen Controls */}
+            <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-0.5 border border-border/60">
+              {/* Font Size Scaling */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cycleFontSize}
+                className="h-7 px-2 text-xs font-bold gap-1 text-muted-foreground hover:text-foreground"
+                title={`Font Size: ${fontSize.toUpperCase()} (Click to change)`}
+              >
+                <Type className="w-3.5 h-3.5 text-primary" />
+                <span className="hidden xs:inline uppercase text-[10px]">{fontSize}</span>
+              </Button>
+
+              {/* Reading Theme Toggle (Dark vs Sepia Warm) */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReadingTheme(t => t === "sepia" ? "dark" : "sepia")}
+                className={`h-7 px-2 text-xs gap-1 ${readingTheme === "sepia" ? "text-amber-400 bg-amber-500/10" : "text-muted-foreground hover:text-foreground"}`}
+                title="Toggle Reading Theme (Dark / Warm Library Sepia)"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-[10px]">{readingTheme === "sepia" ? "Sepia" : "Theme"}</span>
+              </Button>
+
+              {/* Enlarge Reading Screen / Focus Mode Toggle */}
+              <Button
+                variant={isFocusMode ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setIsFocusMode(!isFocusMode)}
+                className={`h-7 px-2.5 text-xs gap-1.5 font-medium transition-all ${
+                  isFocusMode ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+                title={isFocusMode ? "Exit Focus Mode" : "Enlarge Reading Screen (Focus Mode)"}
+              >
+                {isFocusMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                <span className="hidden md:inline text-xs">{isFocusMode ? "Compact View" : "Enlarge Screen"}</span>
+              </Button>
+
+              {/* Fullscreen Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                title="Fullscreen"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {isFocusMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFloatingPalette(true)}
+                className="h-8 text-xs border-border/60 gap-1.5 hidden sm:flex"
+              >
+                <LayoutGrid className="w-3.5 h-3.5 text-primary" />
+                <span>Navigator ({answeredCount}/{questions.length})</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -372,33 +461,58 @@ export default function PastQuestionPlayer() {
       </header>
 
       {/* Main Examination Viewport */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Question & Options (8 cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card className="p-6 sm:p-8 glass-card border-border/60 space-y-6">
+      <main className={`flex-1 w-full mx-auto p-4 sm:p-6 transition-all ${
+        isFocusMode
+          ? "max-w-5xl py-8 space-y-6"
+          : "max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6"
+      }`}>
+        {/* Left Column: Question & Options */}
+        <div className={isFocusMode ? "w-full space-y-6" : "lg:col-span-8 space-y-6"}>
+          <Card className={`p-6 sm:p-10 border transition-all ${
+            readingTheme === "sepia"
+              ? "bg-[#1c1815] text-[#f7eedc] border-[#3f3529] shadow-xl"
+              : "glass-card border-border/60 shadow-lg"
+          } space-y-6`}>
             {/* Meta Tags */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3 text-xs text-muted-foreground">
+            <div className={`flex flex-wrap items-center justify-between gap-2 border-b pb-3 text-xs ${
+              readingTheme === "sepia" ? "border-[#3f3529] text-[#cfbeaa]" : "border-border/40 text-muted-foreground"
+            }`}>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="text-[10px]">
                   {currentQuestion.paper_type || "Paper 1"}
                 </Badge>
                 {currentQuestion.topic && <span>Topic: {currentQuestion.topic}</span>}
               </div>
-              <span className="font-semibold text-primary">{currentQuestion.points || 1} Point(s)</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-primary">{currentQuestion.points || 1} Point(s)</span>
+                {isFocusMode && (
+                  <Badge variant="outline" className="text-[9px] text-primary border-primary/30">
+                    Library Focus Mode
+                  </Badge>
+                )}
+              </div>
             </div>
 
-            {/* Question Text (LaTeX & Markdown rendered) */}
-            <div className="text-base sm:text-lg font-medium text-foreground leading-relaxed">
+            {/* Question Text (LaTeX & Markdown rendered with Font Scaling) */}
+            <div className={`font-medium leading-relaxed ${
+              readingTheme === "sepia" ? "text-[#f7eedc]" : "text-foreground"
+            } ${
+              fontSize === "xlarge"
+                ? "text-xl sm:text-2xl"
+                : fontSize === "large"
+                ? "text-lg sm:text-xl"
+                : "text-base sm:text-lg"
+            }`}>
               <MathRenderer content={currentQuestion.question_text} />
             </div>
 
             {/* Optional Diagram Illustration */}
             {currentQuestion.diagram_url && (
-              <div className="rounded-xl overflow-hidden border border-border/50 max-w-md mx-auto p-2 bg-secondary/30">
+              <div className="rounded-xl overflow-hidden border border-border/50 max-w-lg mx-auto p-3 bg-secondary/30">
                 <img
                   src={currentQuestion.diagram_url}
                   alt="Question Diagram"
-                  className="w-full h-auto object-contain max-h-64 rounded-lg"
+                  className="w-full h-auto object-contain max-h-80 rounded-lg"
                 />
               </div>
             )}
@@ -419,14 +533,18 @@ export default function PastQuestionPlayer() {
                   value={theoryAnswers[currentQuestion.id] || ""}
                   onChange={(e) => handleTheoryAnswerChange(currentQuestion.id, e.target.value)}
                   placeholder="Write your complete derivation, formula substitutions, working steps, and final answer here..."
-                  className="min-h-[160px] text-sm bg-secondary/30 border-border/60 font-mono leading-relaxed p-4"
+                  className={`min-h-[180px] bg-secondary/30 border-border/60 font-mono leading-relaxed p-4 ${
+                    fontSize === "xlarge" ? "text-lg" : fontSize === "large" ? "text-base" : "text-sm"
+                  }`}
                 />
               </div>
             ) : (
               <div className="space-y-3 pt-2">
                 {currentQuestion.past_question_options?.map((option) => {
                   const isSelected = selectedOptionForCurrent === option.id;
-                  let optionStyle = "glass-card border-border/60 hover:border-primary/40 text-foreground";
+                  let optionStyle = readingTheme === "sepia"
+                    ? "bg-[#251f1a] border-[#3f3529] hover:border-amber-500/50 text-[#f7eedc]"
+                    : "glass-card border-border/60 hover:border-primary/40 text-foreground";
 
                   // In practice mode after revealing: color-code correct/incorrect
                   if (mode === "practice" && isCurrentRevealed) {
@@ -439,14 +557,17 @@ export default function PastQuestionPlayer() {
                     optionStyle = "bg-primary/15 border-primary text-primary font-semibold shadow-glow";
                   }
 
+                  const paddingClass = fontSize === "xlarge" ? "p-5 sm:p-6" : fontSize === "large" ? "p-4 sm:p-5" : "p-4";
+                  const textSizeClass = fontSize === "xlarge" ? "text-lg sm:text-xl" : fontSize === "large" ? "text-base sm:text-lg" : "text-sm sm:text-base";
+
                   return (
                     <button
                       key={option.id}
                       onClick={() => handleSelectOption(option.id)}
-                      className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3.5 ${optionStyle}`}
+                      className={`w-full text-left rounded-xl border transition-all flex items-start gap-4 ${paddingClass} ${optionStyle}`}
                     >
                       <span
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors ${
                           isSelected
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary text-muted-foreground border border-border/50"
@@ -454,7 +575,7 @@ export default function PastQuestionPlayer() {
                       >
                         {option.option_letter}
                       </span>
-                      <div className="flex-1 pt-0.5 text-sm sm:text-base">
+                      <div className={`flex-1 pt-0.5 leading-relaxed ${textSizeClass}`}>
                         <MathRenderer content={option.option_text} />
                       </div>
                     </button>
@@ -535,76 +656,124 @@ export default function PastQuestionPlayer() {
           </div>
         </div>
 
-        {/* Right Column: CBT Question Palette Navigator (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <Card className="p-5 glass-card border-border/60 space-y-4">
-            <div className="flex items-center justify-between border-b border-border/40 pb-3">
-              <h3 className="font-bold text-sm text-foreground">Question Navigator</h3>
+        {/* Right Column: CBT Question Palette Navigator (shown in standard mode) */}
+        {!isFocusMode && (
+          <div className="lg:col-span-4 space-y-4">
+            <Card className="p-5 glass-card border-border/60 space-y-4">
+              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                <h3 className="font-bold text-sm text-foreground">Question Navigator</h3>
+                <Badge variant="outline" className="text-xs font-mono">
+                  {answeredCount}/{questions.length} Answered
+                </Badge>
+              </div>
+
+              {/* Status Legend */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground pt-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded bg-primary" />
+                  <span>Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded bg-secondary border border-border" />
+                  <span>Unanswered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded ring-2 ring-primary bg-primary/20" />
+                  <span>Current</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Bookmark className="w-3 h-3 text-accent fill-accent" />
+                  <span>Bookmarked</span>
+                </div>
+              </div>
+
+              {/* Palette Grid */}
+              <div className="grid grid-cols-5 gap-2 pt-2 max-h-72 overflow-y-auto pr-1">
+                {questions.map((q, idx) => {
+                  const isAnswered = !!selectedAnswers[q.id];
+                  const isCurrent = idx === currentIndex;
+                  const isBookmarked = !!bookmarkedMap[q.id];
+
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`h-10 rounded-lg text-xs font-bold relative transition-all flex items-center justify-center ${
+                        isCurrent
+                          ? "ring-2 ring-primary bg-primary/20 text-foreground shadow-glow"
+                          : isAnswered
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : "bg-secondary text-muted-foreground hover:bg-secondary/80 border border-border/40"
+                      }`}
+                    >
+                      {idx + 1}
+                      {isBookmarked && (
+                        <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick Submit Button */}
+              <div className="pt-3 border-t border-border/40">
+                <Button
+                  onClick={() => setShowSubmitDialog(true)}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9"
+                >
+                  Submit All Answers
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </main>
+
+      {/* Floating Palette Dialog for Focus Mode */}
+      <Dialog open={showFloatingPalette} onOpenChange={setShowFloatingPalette}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center justify-between">
+              <span>Question Palette Navigator</span>
               <Badge variant="outline" className="text-xs font-mono">
                 {answeredCount}/{questions.length} Answered
               </Badge>
-            </div>
+            </DialogTitle>
+            <DialogDescription>
+              Select any question number to jump directly to it in reading view.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-5 gap-2 pt-2 max-h-80 overflow-y-auto pr-1">
+            {questions.map((q, idx) => {
+              const isAnswered = !!selectedAnswers[q.id];
+              const isCurrent = idx === currentIndex;
+              const isBookmarked = !!bookmarkedMap[q.id];
 
-            {/* Status Legend */}
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground pt-1">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-primary" />
-                <span>Answered</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-secondary border border-border" />
-                <span>Unanswered</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded ring-2 ring-primary bg-primary/20" />
-                <span>Current</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Bookmark className="w-3 h-3 text-accent fill-accent" />
-                <span>Bookmarked</span>
-              </div>
-            </div>
-
-            {/* Palette Grid */}
-            <div className="grid grid-cols-5 gap-2 pt-2 max-h-72 overflow-y-auto pr-1">
-              {questions.map((q, idx) => {
-                const isAnswered = !!selectedAnswers[q.id];
-                const isCurrent = idx === currentIndex;
-                const isBookmarked = !!bookmarkedMap[q.id];
-
-                return (
-                  <button
-                    key={q.id}
-                    onClick={() => setCurrentIndex(idx)}
-                    className={`h-10 rounded-lg text-xs font-bold relative transition-all flex items-center justify-center ${
-                      isCurrent
-                        ? "ring-2 ring-primary bg-primary/20 text-foreground shadow-glow"
-                        : isAnswered
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "bg-secondary text-muted-foreground hover:bg-secondary/80 border border-border/40"
-                    }`}
-                  >
-                    {idx + 1}
-                    {isBookmarked && (
-                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Quick Submit Button */}
-            <div className="pt-3 border-t border-border/40">
-              <Button
-                onClick={() => setShowSubmitDialog(true)}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-9"
-              >
-                Submit All Answers
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </main>
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => {
+                    setCurrentIndex(idx);
+                    setShowFloatingPalette(false);
+                  }}
+                  className={`h-11 rounded-xl text-xs font-bold relative transition-all flex items-center justify-center ${
+                    isCurrent
+                      ? "ring-2 ring-primary bg-primary/20 text-foreground shadow-glow"
+                      : isAnswered
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 border border-border/40"
+                  }`}
+                >
+                  {idx + 1}
+                  {isBookmarked && (
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Final Submit Confirmation Modal */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>

@@ -52,7 +52,9 @@ export function PDFDocumentReader({
 
   const pdfDocRef = useRef<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<any>(null);
+  const touchStartX = useRef<number>(0);
 
   // Detect mobile on mount
   useEffect(() => {
@@ -233,14 +235,25 @@ export function PDFDocumentReader({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const scale = (zoomLevel / 100) * devicePixelRatio;
-      const viewport = page.getViewport({ scale });
+      const unscaledViewport = page.getViewport({ scale: 1 });
+      const containerWidth = containerRef.current
+        ? containerRef.current.clientWidth - (isMobile ? 12 : 36)
+        : (window.innerWidth - (isMobile ? 16 : 48));
+
+      // Calculate fit-to-width base scale so margins and edges are never cut off on mobile devices
+      const fitWidthScale = Math.max(containerWidth / unscaledViewport.width, 0.35);
+      const baseScale = isMobile ? fitWidthScale : Math.min(1.25, fitWidthScale);
+      const finalDisplayScale = baseScale * (zoomLevel / 100);
+
+      // High-DPI crisp sharpness for mobile Retina and desktop screens
+      const pixelRatio = Math.max(window.devicePixelRatio || 1, 2);
+      const renderScale = finalDisplayScale * pixelRatio;
+      const viewport = page.getViewport({ scale: renderScale });
 
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-      canvas.style.width = `${viewport.width / devicePixelRatio}px`;
-      canvas.style.height = `${viewport.height / devicePixelRatio}px`;
+      canvas.style.width = `${Math.round(viewport.width / pixelRatio)}px`;
+      canvas.style.height = `${Math.round(viewport.height / pixelRatio)}px`;
 
       const renderContext = {
         canvasContext: ctx,
@@ -258,7 +271,7 @@ export function PDFDocumentReader({
     } finally {
       setIsRenderingPage(false);
     }
-  }, [currentPage, zoomLevel]);
+  }, [currentPage, zoomLevel, isMobile]);
 
   // Re-render whenever page or zoom changes and doc is loaded
   useEffect(() => {
@@ -291,12 +304,24 @@ export function PDFDocumentReader({
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 55) {
+      if (diff > 0) handleNextPage();
+      else handlePrevPage();
+    }
+  };
+
   const isPdfJsReady = pdfLibReady && pdfDocRef.current && totalPages > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-w-6xl w-[98vw] sm:w-[96vw] h-[96vh] sm:h-[92vh] p-0 flex flex-col bg-background/95 backdrop-blur-xl border border-border/80 overflow-hidden shadow-2xl select-none rounded-xl"
+        className="max-w-[100vw] w-screen h-[100dvh] sm:max-w-[99vw] sm:w-[99vw] sm:h-[98vh] p-0 flex flex-col bg-background/95 backdrop-blur-xl border border-border/80 overflow-hidden shadow-2xl select-none rounded-none sm:rounded-xl"
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* HEADER TOOLBAR */}
@@ -356,7 +381,7 @@ export function PDFDocumentReader({
                 size="icon"
                 variant="ghost"
                 onClick={handleZoomIn}
-                disabled={zoomLevel >= 200}
+                disabled={zoomLevel >= 250}
                 className="h-7 w-7 text-xs"
                 title="Zoom In"
               >
@@ -475,7 +500,12 @@ export function PDFDocumentReader({
           ) : resolvedUrl ? (
             <>
               {/* Canvas scroll area */}
-              <div className="flex-1 w-full overflow-auto flex items-start justify-center p-2 sm:p-4 relative">
+              <div
+                ref={containerRef}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                className="flex-1 w-full overflow-auto flex items-start justify-center p-1 sm:p-4 relative touch-pan-y"
+              >
                 {isRenderingPage && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-10">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -483,7 +513,7 @@ export function PDFDocumentReader({
                 )}
                 <canvas
                   ref={canvasRef}
-                  className="rounded-lg shadow-xl bg-white"
+                  className="rounded shadow-xl bg-white max-w-full"
                   style={{ display: isPdfJsReady ? "block" : "none" }}
                 />
                 {/* Fallback: PDF.js hasn't parsed the doc yet */}

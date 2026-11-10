@@ -36,6 +36,7 @@ import {
   submitPreJoinAnswer,
 } from "@/lib/virtualClassService";
 import { VirtualClass, ClassQAItem, ClassHandRaise } from "@/types/virtualClasses";
+import { ZoomMeetingEmbed } from "@/components/virtualClass/ZoomMeetingEmbed";
 
 interface ChatMessage {
   id: string;
@@ -1244,62 +1245,13 @@ export default function VirtualClassroomRoom() {
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT / CENTER: STAGE & MEDIA DISPLAY */}
         <div className="flex-1 flex flex-col bg-slate-950 p-3 sm:p-4 relative overflow-hidden">
-          {/* STAGE CONTAINER */}
+          {/* ZOOM MEETING STAGE CONTAINER */}
           <div className="flex-1 w-full rounded-2xl overflow-hidden bg-black/90 border border-border/40 relative flex items-center justify-center shadow-2xl">
-            {/* Host Video Stream / Screen Share */}
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted={isHost}
-              className={`w-full h-full object-contain ${
-                videoActive || isScreenSharing ? "block" : "hidden"
-              }`}
+            <ZoomMeetingEmbed
+              virtualClass={virtualClass}
+              isHost={isHost}
+              onLeave={() => isHost ? handleEndClass() : navigate("/virtual-classes")}
             />
-
-            {/* Stage Placeholder when camera/screen is off */}
-            {!videoActive && !isScreenSharing && (
-              <div className="text-center space-y-4 p-6 max-w-lg">
-                <div className="w-20 h-20 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center mx-auto shadow-inner">
-                  <Video className="w-10 h-10 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {virtualClass.host?.name || "The Host"}'s Stage
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {isHost
-                      ? "Turn on your camera or share your screen below to begin broadcasting to attendees."
-                      : "The host's presentation broadcast will appear here once active. Listen in via audio or participate in Q&A."}
-                  </p>
-                </div>
-                <div className="flex items-center justify-center gap-2 pt-2">
-                  <Badge variant="outline" className="text-slate-400 border-slate-700 text-[11px]">
-                    1080p WebRTC Broadcast
-                  </Badge>
-                  <Badge variant="outline" className="text-slate-400 border-slate-700 text-[11px]">
-                    Low-Latency Audio
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* Speaking Status Overlay */}
-            {canSpeak && !isHost && (
-              <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-emerald-500/90 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-sm animate-pulse">
-                <Mic className="w-3.5 h-3.5" />
-                You have speaking permission
-              </div>
-            )}
-
-            {/* Remote Participant Tiles — bottom-right strip */}
-            {remotePeers.length > 0 && (
-              <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 max-h-72 overflow-y-auto">
-                {remotePeers.map((peer) => (
-                  <RemotePeerTile key={peer.userId} peer={peer} />
-                ))}
-              </div>
-            )}
           </div>
 
           {/* BOTTOM CONTROLS DOCK */}
